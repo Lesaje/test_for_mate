@@ -13,10 +13,12 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core"      % "1.0.0-RC7",
 
   // And add any of these as needed
-  "org.tpolecat" %% "doobie-h2"        % "1.0.0-RC7",          // H2 driver 1.4.200 + type mappings.
-  "org.tpolecat" %% "doobie-hikari"    % "1.0.0-RC7",          // HikariCP transactor.
-  "org.tpolecat" %% "doobie-postgres"  % "1.0.0-RC7",          // Postgres driver 42.7.5 + type mappings.
-  "org.tpolecat" %% "doobie-specs2"    % "1.0.0-RC7" % "test", // Specs2 support for typechecking statements.
-  "org.tpolecat" %% "doobie-scalatest" % "1.0.0-RC7" % "test"  // ScalaTest support for typechecking statements.
+  "org.tpolecat" %% "doobie-h2"        % "1.0.0-RC7",
+  "org.tpolecat" %% "doobie-hikari"    % "1.0.0-RC7",
+  "org.tpolecat" %% "doobie-postgres"  % "1.0.0-RC7",
+  "org.tpolecat" %% "doobie-specs2"    % "1.0.0-RC7" % "test",
+  "org.tpolecat" %% "doobie-scalatest" % "1.0.0-RC7" % "test",
+
+  "org.seleniumhq.selenium" % "selenium-java" % "4.10.0"
 
 )
