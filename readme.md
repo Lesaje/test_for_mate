@@ -19,3 +19,33 @@ To run the tests:
 
 ```bash
 sbt test
+```
+
+
+# Task 2: Web Scraper
+
+This task includes a Selenium-based web scraper that collects course data from [mate.academy](https://mate.academy).
+
+## Extracted Data
+
+- Course name
+- Short description
+- Available formats (full-time / flex)
+- Duration for each format
+- Modules and their topics
+
+## Project Structure
+
+- **Scraper logic**: `task2/Scraper.scala`
+- **Models**: `Course`, `Module`, `CourseFormat`
+
+## How to Run
+
+1. Install Chrome and ChromeDriver
+2. Make sure `chromedriver` is in your system `PATH`
+3. In SBT console:
+
+```scala
+import task2.Scraper
+val courses = Scraper.scrapeAllCourses()
+courses.foreach(_.prettyPrint())
