@@ -58,8 +58,8 @@ object Scraper {
     val buttons = buttonContainer.findElements(By.tagName("a")).asScala.toList
 
     val formats = scala.collection.mutable.Set[CourseFormat]()
-    if (buttons.exists(_.getText.contains("Навчатися повний день"))) formats += FullTime
-    if (buttons.exists(_.getText.contains("Навчатися у вільний час"))) formats += Flex
+    if (buttons.exists(_.getAttribute("textContent").contains("Навчатися повний день"))) formats += FullTime
+    if (buttons.exists(_.getAttribute("textContent").contains("Навчатися у вільний час"))) formats += Flex
     formats.toSet
   }
 
@@ -69,7 +69,7 @@ object Scraper {
     val durationRow = durationRows.find(_.getAttribute("textContent").contains("Тривалість")).get
     val cells = durationRow.findElements(By.cssSelector("div.TableColumnsView_tableCellGray__4hadg")).asScala
 
-    val fullTimeDuration = if (cells.size >= 1) cells(0).getAttribute("textContent").trim else "Not available"
+    val fullTimeDuration = if (cells.nonEmpty) cells.head.getAttribute("textContent").trim else "Not available"
     val flexDuration = if (cells.size >= 2) cells(1).getAttribute("textContent").trim else "Not available"
 
     (fullTimeDuration, flexDuration)
@@ -82,9 +82,19 @@ object Scraper {
     )).asScala.toList
 
     modules.map { moduleEl =>
-      val moduleName = moduleEl.findElement(By.cssSelector("p.CourseModulesList_topicName__7vxtk")).getText.trim
-      val topicElements = moduleEl.findElements(By.cssSelector("ul.CourseModulesList_topicsList__NJTKz > li.CourseModulesList_topicItem__8wNTG")).asScala
-      val topics = topicElements.map(_.getText.trim).toList
+      val moduleName = moduleEl
+        .findElement(By.cssSelector("p.CourseModulesList_topicName__7vxtk"))
+        .getAttribute("textContent").trim
+
+      val topicElements = moduleEl.findElements(By.cssSelector(
+        "ul.CourseModulesList_topicsList__NJTKz > li.CourseModulesList_topicItem__8wNTG"
+      )).asScala
+
+      val topics = topicElements
+        .map(_.getAttribute("textContent").trim)
+        .filter(_.nonEmpty)
+        .toList
+
       Module(moduleName, topics)
     }
   }
@@ -95,8 +105,7 @@ object Scraper {
     try {
       driver.get("https://mate.academy/")
       var courseElements = getCourseElements(driver)
-      println(s"Found ${courseElements.size} course cards.")
-
+      
       courseElements.indices.map { idx =>
         courseElements = getCourseElements(driver)
         val element = courseElements(idx)
