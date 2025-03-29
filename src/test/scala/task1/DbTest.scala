@@ -7,8 +7,6 @@ import doobie.implicits.*
 import cats.effect.unsafe.implicits.global
 import db.{DbConnector, H2DbConnector, Queries}
 
-import java.time.OffsetDateTime
-
 class DbTest extends AnyFunSuite {
 
   val dbConnector: DbConnector[IO] = H2DbConnector[IO]()
@@ -143,8 +141,6 @@ class DbTest extends AnyFunSuite {
     result3.foreach { case (email, leadId, lostReason) =>
       println(s"Email: $email, Lead ID: $leadId, Lost Reason: ${lostReason.getOrElse("N/A")}")
     }
-
-
 
     // Query 1.1
     assert(result1.nonEmpty, "There should be some grouped leads")

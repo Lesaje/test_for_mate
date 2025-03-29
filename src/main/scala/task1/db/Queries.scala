@@ -5,12 +5,6 @@ import task1.model.CourseType
 
 object Queries {
 
-  /**
-   * 1.1. The number of created leads per week grouped by course type.
-   *
-   * This query calculates the week start (Monday) for each lead’s creation date,
-   * then groups by that week (formatted as a string) and by course type, and finally counts the leads.
-   */
   def leadsPerWeekGroupedByCourse =
     sql"""
       SELECT
@@ -27,21 +21,6 @@ object Queries {
           week, course_type;
     """.query[(String, String, Long)]
 
-  /**
-   * 1.2. The number of WON flex leads per country created from 01.01.2024.
-   *
-   * Explanation of each part:
-   * - FROM leads l: starting from the leads table.
-   * - JOIN courses c: join on courses to obtain the course type.
-   * - JOIN users u: join on users to get the associated domain.
-   * - JOIN domains d: join on domains to get the country information.
-   * - WHERE conditions:
-   *     * l.status = 'WON' ensures only won leads are considered.
-   *     * c.courseType = 'FLEX' ensures that only flex courses are included.
-   *     * l.created_at >= TIMESTAMP '2024-01-01 00:00:00' limits the results to leads created from January 1, 2024.
-   * - GROUP BY d.country_name groups the result by each country.
-   * - COUNT(*) calculates the number of leads per country.
-   */
   def wonFlexLeadsPerCountry =
     sql"""
       SELECT
@@ -63,17 +42,6 @@ object Queries {
           d.country_name;
     """.query[(String, Long)]
 
-  /**
-   * 1.3. User email, lead id and lost reason for users who have lost flex leads from 01.07.2024.
-   *
-   * Explanation:
-   * - Selects the user's email, the lead id, and the lost_reason from leads.
-   * - Joins courses and users to ensure we filter only flex leads.
-   * - WHERE conditions:
-   *     * l.status = 'LOST' selects only lost leads.
-   *     * c.courseType = 'FLEX' ensures the course is of FLEX type.
-   *     * l.created_at >= TIMESTAMP '2024-07-01 00:00:00' limits to leads created on or after July 1, 2024.
-   */
   def lostFlexLeads =
     sql"""
       SELECT
