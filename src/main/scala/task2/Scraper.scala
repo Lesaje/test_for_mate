@@ -32,42 +32,98 @@ object Scraper {
     driver.findElements(By.cssSelector("a.ProfessionCard_cardWrapper__BCg0O")).asScala.toList
   }
 
-  def extractCourseName(driver: WebDriver, courseElement: WebElement): String = {
-    scrollIntoView(driver, courseElement)
-    val titleElement = courseElement.findElement(By.cssSelector("h3.ProfessionCard_title__m7uno"))
-    titleElement.getAttribute("textContent").trim
+  def extractCourseName(courseElement: WebElement): String = {
+    courseElement.findElement(By.cssSelector("h3.ProfessionCard_title__m7uno")).getAttribute("textContent").trim
   }
 
-  def extractShortDescription(driver: WebDriver, courseElement: WebElement): String = {
-    scrollIntoView(driver, courseElement)
-    val descElement = courseElement.findElement(By.cssSelector("p.ProfessionCard_description__K8weo"))
-    descElement.getAttribute("textContent").trim
+  def extractShortDescription(courseElement: WebElement): String = {
+    courseElement.findElement(By.cssSelector("p.ProfessionCard_description__K8weo")).getAttribute("textContent").trim
   }
 
-  def extractDuration(driver: WebDriver, courseElement: WebElement): String = {
+  def openCoursePage(driver: WebDriver, courseElement: WebElement): Unit = {
     scrollIntoView(driver, courseElement)
-    val durationElement = courseElement.findElement(By.cssSelector("p.ProfessionCard_duration__13PwX"))
-    durationElement.getAttribute("textContent").trim
+    val jsExecutor = driver.asInstanceOf[JavascriptExecutor]
+    jsExecutor.executeScript("arguments[0].click();", courseElement)
+    waitForElementPresence(driver, By.cssSelector("div.TableColumnsView_doubleColumnsRowWithButtons__kiM_7"))
   }
 
-  def scrapeCourses(): Unit = {
+  def extractCourseFormats(driver: WebDriver): Set[CourseFormat] = {
+    val wait = new WebDriverWait(driver, Duration.ofSeconds(10))
+    val allContainers = wait
+      .until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+        By.cssSelector("div.TableColumnsView_doubleColumnsRowWithButtons__kiM_7")
+      )).asScala.toList
+
+    val buttonContainer = allContainers.last
+    val buttons = buttonContainer.findElements(By.tagName("a")).asScala.toList
+
+    val formats = scala.collection.mutable.Set[CourseFormat]()
+    if (buttons.exists(_.getText.contains("Навчатися повний день"))) formats += FullTime
+    if (buttons.exists(_.getText.contains("Навчатися у вільний час"))) formats += Flex
+    formats.toSet
+  }
+
+  def extractDetailedDurations(driver: WebDriver): (String, String) = {
+    val durationRows = driver.findElements(By.cssSelector("div.TableColumnsView_rowBase__4C9kf")).asScala
+
+    val durationRow = durationRows.find(_.getAttribute("textContent").contains("Тривалість")).get
+    val cells = durationRow.findElements(By.cssSelector("div.TableColumnsView_tableCellGray__4hadg")).asScala
+
+    val fullTimeDuration = if (cells.size >= 1) cells(0).getAttribute("textContent").trim else "Not available"
+    val flexDuration = if (cells.size >= 2) cells(1).getAttribute("textContent").trim else "Not available"
+
+    (fullTimeDuration, flexDuration)
+  }
+
+  def extractModules(driver: WebDriver): List[Module] = {
+    val wait = new WebDriverWait(driver, Duration.ofSeconds(10))
+    val modules = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
+      By.cssSelector("ul.CourseModulesList_modulesList__C86yL > li.color-dark-blue")
+    )).asScala.toList
+
+    modules.map { moduleEl =>
+      val moduleName = moduleEl.findElement(By.cssSelector("p.CourseModulesList_topicName__7vxtk")).getText.trim
+      val topicElements = moduleEl.findElements(By.cssSelector("ul.CourseModulesList_topicsList__NJTKz > li.CourseModulesList_topicItem__8wNTG")).asScala
+      val topics = topicElements.map(_.getText.trim).toList
+      Module(moduleName, topics)
+    }
+  }
+
+  def scrapeAllCourses(): List[Course] = {
     val driver = setupDriver()
 
     try {
       driver.get("https://mate.academy/")
-
-      val courseElements = getCourseElements(driver)
+      var courseElements = getCourseElements(driver)
       println(s"Found ${courseElements.size} course cards.")
 
-      courseElements.zipWithIndex.foreach { case (element, idx) =>
-        val name = extractCourseName(driver, element)
-        val shortDescription = extractShortDescription(driver, element)
-        val duration = extractDuration(driver, element)
-        println(s"Course #${idx + 1}: $name")
-        println(s"Duration: $duration")
-        println(s"Short Description: $shortDescription")
-        println("--------------")
-      }
+      courseElements.indices.map { idx =>
+        courseElements = getCourseElements(driver)
+        val element = courseElements(idx)
+
+        scrollIntoView(driver, element)
+
+        val name = extractCourseName(element)
+        val shortDescription = extractShortDescription(element)
+
+        openCoursePage(driver, element)
+
+        val formats = extractCourseFormats(driver)
+        val (fullTimeDuration, flexDuration) = extractDetailedDurations(driver)
+        val modules = extractModules(driver)
+
+        driver.navigate().back()
+        waitForElementPresence(driver, By.cssSelector("a.ProfessionCard_cardWrapper__BCg0O"))
+
+        Course(
+          name = name,
+          shortDescription = shortDescription,
+          fullTimeDuration = fullTimeDuration,
+          flexDuration = flexDuration,
+          availableFormats = formats,
+          modules = modules
+        )
+      }.toList
 
     } finally {
       driver.quit()

@@ -2,5 +2,6 @@ import task2.Scraper
 
 @main
 def main(): Unit = {
-  Scraper.scrapeCourses()
+  val courses = Scraper.scrapeAllCourses()
+  println(courses(0))
 }
